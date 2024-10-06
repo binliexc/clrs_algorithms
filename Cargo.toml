@@ -1,5 +1,5 @@
 [package]
-name = "line_segment_tree"
+name = "some_data_structures"
 version = "0.1.0"
 edition = "2021"
 

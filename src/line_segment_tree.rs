@@ -9,7 +9,7 @@ pub struct LineSegmentTree {
 
 impl LineSegmentTree {
     pub fn new(elements: Vec<usize>) -> Self {
-        let mut nodes = vec![0; closest_second_power(elements.len() - 1) << 1];
+        let mut nodes = vec![0; closest_second_power(elements.len()) << 1];
         let m = Self::get_m(elements.len());
 
         let mut idx = m;
@@ -69,6 +69,7 @@ impl LineSegmentTree {
 
 /// 找到和n最接近的大于等于n的二次幂
 pub fn closest_second_power(mut n: usize) -> usize {
+    n -= 1;
     n = n | (n >> 1);
     n = n | (n >> 2);
     n = n | (n >> 4);
@@ -76,4 +77,15 @@ pub fn closest_second_power(mut n: usize) -> usize {
     n = n | (n >> 16);
     n = n | (n >> 32);
     n + 1
+}
+
+#[cfg(test)]
+mod line_segment_tree_tests {
+    use crate::line_segment_tree::closest_second_power;
+
+    #[test]
+    fn closest_second_power_test_1() {
+        assert_eq!(4, closest_second_power(4));
+        assert_eq!(16, closest_second_power(11));
+    }
 }
