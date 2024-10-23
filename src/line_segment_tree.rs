@@ -128,23 +128,38 @@ impl LineSegmentTreeRmq {
             s = s + self.m - 1;
             e = e + self.m + 1;
 
+            let mut first_time = true;
             while s ^ e != 1 {
-                self.t[s ^ 1] += x;
-                self.t[e ^ 1] += x;
+                if first_time {
+                    if s ^ 1 == 1 {
+                        self.t[s ^ 1] += x;
+                    }
+                    if e ^ 1 == 0 {
+                        self.t[e ^ 1] += x;
+                    }
+                    first_time = false;
+                } else {
+                    self.t[s ^ 1] += x;
+                    self.t[e ^ 1] += x;
+                }
 
                 let a = min(self.t[s], self.t[s ^ 1]);
                 self.t[s] -= a;
                 self.t[s ^ 1] -= a;
                 self.t[s >> 1] += a;
 
-                let b = min(self.t[s], self.t[s ^ 1]);
-                self.t[s] -= b;
-                self.t[s ^ 1] -= b;
-                self.t[s >> 1] += b;
+                let b = min(self.t[e], self.t[e ^ 1]);
+                self.t[e] -= b;
+                self.t[e ^ 1] -= b;
+                self.t[e >> 1] += b;
 
                 s >>= 1;
                 e >>= 1;
             }
+            let min_s_e = min(self.t[s], self.t[e]);
+            self.t[s] -= min_s_e;
+            self.t[s ^ 1] -= min_s_e;
+            self.t[s >> 1] += min_s_e;
         }
     }
 
@@ -193,6 +208,8 @@ impl LineSegmentTreeRmq {
         lans += self.t[s];
         rans += self.t[e];
         let mut ans = max(lans, rans);
+        s >>= 1;
+
         while s > 0 {
             ans += self.t[s];
             s >>= 1;
@@ -220,5 +237,14 @@ mod line_segment_tree_tests {
         let rmq_tree = LineSegmentTreeRmq::new(elements);
         println!("{:?}", rmq_tree.t);
         assert_eq!(14, rmq_tree.max(3, 6));
+    }
+
+    #[test]
+    fn line_segment_tree_rmq_test_2() {
+        let elements = vec![8, 13, 17, 9, 6, 8, 14, 11];
+        let mut rmq_tree = LineSegmentTreeRmq::new(elements);
+        rmq_tree.add_x(2, 5, 2);
+        println!("{:?}", rmq_tree.t);
+        assert_eq!(rmq_tree.max(2, 6), 19);
     }
 }
