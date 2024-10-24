@@ -1,17 +1,16 @@
 use std::{
-    cmp::{max, min},
-    usize,
+    cmp::{max, min}, f32::consts::E, usize
 };
 
 /// 线段树
 pub struct LineSegmentTree {
-    nodes: Vec<usize>,
+    nodes: Vec<isize>,
 
     m: usize,
 }
 
 impl LineSegmentTree {
-    pub fn new(elements: Vec<usize>) -> Self {
+    pub fn new(elements: Vec<isize>) -> Self {
         let mut nodes = vec![0; closest_second_power(elements.len()) << 1];
         let m = Self::get_m(elements.len());
 
@@ -30,7 +29,7 @@ impl LineSegmentTree {
         LineSegmentTree { nodes, m }
     }
 
-    pub fn query(&self, mut s: usize, mut t: usize) -> usize {
+    pub fn query(&self, mut s: usize, mut t: usize) -> isize {
         s = s + self.m - 1;
         t = t + self.m + 1;
         println!("{s}, {t}");
@@ -53,7 +52,7 @@ impl LineSegmentTree {
         ans
     }
 
-    pub fn change(&mut self, mut n: usize, new_val: usize) {
+    pub fn change(&mut self, mut n: usize, new_val: isize) {
         n += self.m;
         self.nodes[n] = new_val;
         n >>= 1;
@@ -219,11 +218,78 @@ impl LineSegmentTreeRmq {
     }
 }
 
+// 支持单点查询，区间修改的区间树trait
+pub trait LineSegmentTree3 {
+    // 新建树的关联方法
+    fn new_lst3(a: Vec<isize>) -> Self;
+
+    // 原数组[s, e]区间的值都新增x
+    fn interval_add_x(&mut self, s: usize, e: usize, x: isize);
+
+    // 为用堆建树的节点i新增x
+    fn add_x(&mut self, i: usize, x: isize);
+
+    // 得到原数组下标为idx的值
+    fn get_val(&self, idx: usize) -> isize;
+}
+
+impl LineSegmentTree3 for LineSegmentTree {
+    fn new_lst3(a: Vec<isize>) -> Self {
+        let m = closest_second_power(a.len());
+        let mut t = vec![0; m << 1];
+        t[m] = a[0];
+        for i in 1..a.len() {
+            t[m + i] = a[i] - a[i - 1];
+        }
+        for i in (1..m).rev() {
+            t[i] = t[i << 1] + t[(i << 1) + 1];
+        }
+        LineSegmentTree {
+            nodes: t,
+            m: m,    
+        }
+    }
+
+    fn interval_add_x(&mut self, s: usize, e: usize, x: isize) {
+        self.add_x(s + self.m, x); 
+        self.add_x(e + self.m + 1, -x);
+    }
+
+    fn add_x(&mut self, mut i: usize, x: isize) {
+        while i > 0 {
+            self.nodes[i] += x;
+            i >>= 1;
+        }
+    }
+    
+    fn get_val(&self, idx: usize) -> isize {
+        if idx == 1 {
+            self.nodes[self.m >> 1]
+        } else {
+            let mut s = self.m;
+            let mut e = self.m + idx + 1;
+
+            let mut ans = 0;
+            while s ^ e != 1 {
+                if e & 1 == 1 {
+                    ans += self.nodes[e ^ 1];
+                }
+                s >>= 1;
+                e >>= 1;
+            }
+            ans += self.nodes[s];
+            ans
+        }
+    }
+}
+
 #[cfg(test)]
 mod line_segment_tree_tests {
+    use std::env::temp_dir;
+
     use crate::line_segment_tree::closest_second_power;
 
-    use super::LineSegmentTreeRmq;
+    use super::{LineSegmentTree, LineSegmentTree3, LineSegmentTreeRmq};
 
     #[test]
     fn closest_second_power_test_1() {
@@ -246,5 +312,17 @@ mod line_segment_tree_tests {
         rmq_tree.add_x(2, 5, 2);
         println!("{:?}", rmq_tree.t);
         assert_eq!(rmq_tree.max(2, 6), 19);
+    }
+
+    #[test]
+    fn line_segment_tree_3_test_1() {
+        let elements = vec![10, 19, 20, 1, 5, 9, 12, 7];
+        let mut tree = LineSegmentTree::new_lst3(elements);
+        println!("before add_x: {:?}", tree.nodes);
+        tree.interval_add_x(2, 5, 4);
+        println!("after add_x: {:?}", tree.nodes);
+        assert_eq!(tree.get_val(2), 24);
+        assert_eq!(tree.get_val(4), 9);
+        assert_eq!(tree.get_val(5), 13);
     }
 }
