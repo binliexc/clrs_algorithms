@@ -1,5 +1,7 @@
 use std::{
-    cmp::{max, min}, f32::consts::E, usize
+    cmp::{max, min},
+    thread::sleep,
+    usize,
 };
 
 /// 线段树
@@ -244,14 +246,11 @@ impl LineSegmentTree3 for LineSegmentTree {
         for i in (1..m).rev() {
             t[i] = t[i << 1] + t[(i << 1) + 1];
         }
-        LineSegmentTree {
-            nodes: t,
-            m: m,    
-        }
+        LineSegmentTree { nodes: t, m: m }
     }
 
     fn interval_add_x(&mut self, s: usize, e: usize, x: isize) {
-        self.add_x(s + self.m, x); 
+        self.add_x(s + self.m, x);
         self.add_x(e + self.m + 1, -x);
     }
 
@@ -261,7 +260,7 @@ impl LineSegmentTree3 for LineSegmentTree {
             i >>= 1;
         }
     }
-    
+
     fn get_val(&self, idx: usize) -> isize {
         if idx == 1 {
             self.nodes[self.m >> 1]
@@ -283,13 +282,139 @@ impl LineSegmentTree3 for LineSegmentTree {
     }
 }
 
+// 维护一个数据结构，支持整数插入，整数删除，取第k大的数，查询数的排名，查询某数是否存在
+pub trait LineSegmentTree4 {
+    // 创建一个支持范围[0, 大于等于num的最小二次幂]的数据结构
+    fn new_lst4(num: usize) -> Self;
+
+    fn with_initialization(v: Vec<isize>) -> Self;
+
+    fn insert_x(&mut self, x: usize);
+
+    fn remove_x(&mut self, x: usize);
+
+    fn kth_num(&self, k: usize) -> usize;
+
+    fn x_rank(&self, x: usize) -> usize;
+
+    fn x_exists(&self, x: usize) -> bool;
+}
+
+impl LineSegmentTree4 for LineSegmentTree {
+    fn new_lst4(num: usize) -> Self {
+        let m = closest_second_power(num);
+        let t = vec![0; m << 1];
+
+        LineSegmentTree { nodes: t, m }
+    }
+
+    fn with_initialization(v: Vec<isize>) -> Self {
+        let mut max = v[0];
+        for e in &v {
+            if *e < 0 {
+                panic!("元素必须全为正整数");
+            }
+            if max < *e {
+                max = *e;
+            }
+        }
+        let mut s = Self::new_lst4(max as usize);
+
+        for val in v {
+            s.nodes[s.m + val as usize] += 1;
+        }
+
+        let mut i = s.m - 1;
+        while i > 0 {
+            let l = i << 1;
+            s.nodes[i] = s.nodes[l] + s.nodes[l + 1];
+            i -= 1;
+        }
+
+        s
+    }
+
+    fn insert_x(&mut self, x: usize) {
+        assert!(self.m > x, "x超出范围，不能插入");
+
+        let mut i = x + self.m;
+        while i > 0 {
+            self.nodes[i] += 1;
+            i >>= 1;
+        }
+    }
+
+    fn remove_x(&mut self, x: usize) {
+        assert!(self.m > x, "x超出范围，不能插入");
+
+        let mut i = x + self.m;
+        while i > 0 {
+            self.nodes[i] -= 1;
+            i >>= 1;
+        }
+    }
+
+    fn kth_num(&self, k: usize) -> usize {
+        assert!(self.nodes[1] > k as isize, "k={k}超出范围，查询失败");
+
+        let mut i = 1;
+        let mut k = self.nodes[1] - k as isize + 1;
+
+        while i < self.nodes.len() {
+            if i << 1 < self.nodes.len() {
+                if self.nodes[i << 1] >= k {
+                    i <<= 1;
+                } else {
+                    k = k - self.nodes[i << 1];
+                    i = (i << 1) + 1;
+                }
+            } else {
+                break;
+            }
+        }
+
+        println!("i的值为{i}");
+        println!("m的值为{}", self.m);
+        i - self.m
+    }
+
+    fn x_rank(&self, x: usize) -> usize {
+        assert!(self.nodes[self.m + x] != 0, "x={x}在当前数据结构不存在");
+
+        let mut s = self.m;
+        let mut e = self.m + x + 1;
+
+        let mut seq = 0;
+
+        if s ^ e != 1 {
+            while s ^ e != 1 {
+                if e & 1 == 1 {
+                    seq += self.nodes[e ^ 1];
+                }
+                s >>= 1;
+                e >>= 1;
+            }
+
+            seq += self.nodes[s];
+        } else {
+            seq = self.nodes[s >> 1];
+        }
+
+        (self.nodes[1] - seq) as usize
+    }
+
+    fn x_exists(&self, x: usize) -> bool {
+        self.nodes[x + self.m] != 0
+    }
+}
+
 #[cfg(test)]
 mod line_segment_tree_tests {
-    use std::env::temp_dir;
+    use rand::{distributions::Uniform, prelude::Distribution};
 
     use crate::line_segment_tree::closest_second_power;
 
-    use super::{LineSegmentTree, LineSegmentTree3, LineSegmentTreeRmq};
+    use super::{LineSegmentTree, LineSegmentTree3, LineSegmentTree4, LineSegmentTreeRmq};
 
     #[test]
     fn closest_second_power_test_1() {
@@ -324,5 +449,32 @@ mod line_segment_tree_tests {
         assert_eq!(tree.get_val(2), 24);
         assert_eq!(tree.get_val(4), 9);
         assert_eq!(tree.get_val(5), 13);
+    }
+
+    #[test]
+    fn line_segment_tree_4_test_1() {
+        // 随机数生成器，范围[0, 65535]
+        let between = Uniform::from(0..=65535);
+        let mut rng = rand::thread_rng();
+
+        let mut v = Vec::with_capacity(1000);
+
+        let mut max = 0;
+        let mut min = 0;
+        for _ in 0..1000 {
+            let val = between.sample(&mut rng);
+            if max < val {
+                max = val;
+            }
+            if min > val {
+                min = val;
+            }
+            v.push(val);
+        }
+
+        let t = LineSegmentTree::with_initialization(v);
+
+        assert_eq!(1000, t.nodes[1]);
+        assert_eq!(max, t.kth_num(1) as isize);
     }
 }
