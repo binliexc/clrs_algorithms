@@ -86,8 +86,21 @@ impl MaxHeap {
                         idx >>= 1
                     }
                 }
-            } 
+            }
             Ok(())
+        }
+    }
+
+    pub fn push(&mut self, ele: i32) {
+        self.val.push(ele);
+
+        let mut idx = self.val.len() - 1;
+        while idx > 1 && self.val[idx >> 1] < self.val[idx] {
+            let tmp = self.val[idx >> 1];
+            self.val[idx >> 1] = self.val[idx];
+            self.val[idx] = tmp;
+
+            idx >>= 1;
         }
     }
 }
@@ -133,6 +146,19 @@ mod heap_test {
         assert_eq!(max_heap.peek_max(), 99);
         max_heap.remove(57);
         println!("{:#?}", max_heap.val);
-        assert_eq!(max_heap.remove(57), Err("未在堆中找到值为57的元素".to_string()));
+        assert_eq!(
+            max_heap.remove(57),
+            Err("未在堆中找到值为57的元素".to_string())
+        );
+    }
+
+    // 测试push方法
+    #[test]
+    fn heap_test3() {
+        let v = vec![i32::MIN, 5, 8, 11, 320, 13, 57, 32, 99, 60, 77];
+        let mut max_heap = MaxHeap::new(v);
+        max_heap.push(321);
+        assert_eq!(max_heap.extract_max().unwrap(), 321);
+        assert_eq!(max_heap.extract_max().unwrap(), 320);
     }
 }
