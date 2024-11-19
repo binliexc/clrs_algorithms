@@ -40,8 +40,12 @@ impl MaxHeap {
         }
     }
 
-    pub fn peek_max(&self) -> i32 {
-        self.val[1]
+    pub fn peek_max(&self) -> Option<i32> {
+        if self.val.len() > 1 {
+            Some(self.val[1])
+        } else {
+            None
+        }
     }
 
     pub fn extract_max(&mut self) -> Option<i32> {
@@ -143,7 +147,7 @@ mod heap_test {
         let v = vec![i32::MIN, 5, 8, 11, 320, 13, 57, 32, 99, 60, 77];
         let mut max_heap = MaxHeap::new(v);
         max_heap.remove(320);
-        assert_eq!(max_heap.peek_max(), 99);
+        assert_eq!(max_heap.peek_max().unwrap(), 99);
         max_heap.remove(57);
         println!("{:#?}", max_heap.val);
         assert_eq!(
