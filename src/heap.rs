@@ -82,7 +82,7 @@ impl MaxHeap {
                     self.val[idx] = last;
                     Self::max_heapify(&mut self.val, idx);
                 } else {
-                    while idx > 0 && self.val[idx >> 1] < self.val[idx] {
+                    while idx > 1 && self.val[idx >> 1] < self.val[idx] {
                         let tmp = self.val[idx >> 1];
                         self.val[idx >> 1] = self.val[idx];
                         self.val[idx] = tmp;
