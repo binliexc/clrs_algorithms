@@ -7,3 +7,5 @@ mod interval_sum;
 mod lists;
 mod heap;
 mod disjoint_set;
+mod disjoint_set_upgrade;
+mod offline_minimum;
