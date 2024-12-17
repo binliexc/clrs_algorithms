@@ -1,4 +1,4 @@
-// 算法导论 21-1
+// 算法导论21-1(脱机最小值)
 // n: 数据范围[1, n];
 // m: extract_min执行次数;
 // seq：insert和extract_min执行序列, 例: ['3', '7', 'E', '5'], 代表操作序列insert(3), insert(7), extract_min(), insert(5)

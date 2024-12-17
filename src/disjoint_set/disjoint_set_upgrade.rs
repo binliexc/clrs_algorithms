@@ -56,7 +56,7 @@ impl Node {
 mod disjoint_set_upgrade_tests {
     use std::collections::HashMap;
 
-    use crate::disjoint_set_upgrade::Node;
+    use crate::disjoint_set::disjoint_set_upgrade::Node;
 
     #[test]
     fn disjoint_set_upgrade_test1() {

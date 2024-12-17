@@ -1,14 +1,14 @@
 #![feature(once_cell_get_mut)]
-use std::mem::ManuallyDrop;
+#![feature(box_as_ptr)]
 
-use disjoint_set::{Set, NODE_CONTAINER};
+use disjoint_set::depth_determination::{Container, TreeNode};
 
 mod basic_difference;
 mod binary_indexed_tree;
+mod disjoint_set;
 mod interval_sum;
 mod line_segment_tree;
 mod lists;
-mod disjoint_set;
 
 fn main() {
     // let elements = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -22,32 +22,39 @@ fn main() {
     // *ref1 += 1;
     // println!("{}", data);
 
-    disjoint_set_test1();
+    // disjoint_set_test1();
+
+    depth_determination_test1();
 }
 
-fn disjoint_set_test1() {
-    let nodes = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    let edges = vec![(1, 4), (5, 7), (1, 3), (8, 9), (1, 2), (5, 6), (2, 3)];
-
-    for node in nodes {
-        Set::make_set(node);
+pub fn depth_determination_test1() {
+    let mut container = Container::new(14);
+    for i in 0..14 {
+        container.make_tree(i);
     }
+    
+    // Tree1
+    container.graft(5, 4);
+    container.graft(4, 2);
+    container.graft(2, 1);
 
-    for (a, b) in edges {
-        let set_a = Set::find_set(a);
-        let set_b = Set::find_set(b);
-        println!("a: {a}, b: {b}");
-        println!("set_a: {:?}", set_a);
-        println!("set_b: {:?}", set_b);
+    // Tree2
+    container.graft(13, 12);
+    container.graft(12, 3);
 
-        Set::union(set_a, set_b);
-    }
-    println!("union set complete");
+    // Tree3
+    container.graft(10, 8);
+    container.graft(9, 8);
+    container.graft(8, 6);
+    container.graft(7, 6);
 
-    let container = unsafe { NODE_CONTAINER.get().unwrap() };
-    for (key, val) in container {
-        let n = unsafe { Box::from_raw(*val) };
-        println!("key: {key}, set: {:p}", n.set);
-        let _ = ManuallyDrop::new(n);
-    }
+    container.graft(3, 1);
+    container.graft(6, 3);
+
+    println!("node10.depth: {}", container.find_depth(10));
+    println!("node7.depth: {}", container.find_depth(7));
+    println!("node12.depth: {}", container.find_depth(12));
+    println!("node13.depth: {}", container.find_depth(13));
+    println!("node1.depth: {}", container.find_depth(1));
+    println!("node5.depth: {}", container.find_depth(5));
 }
