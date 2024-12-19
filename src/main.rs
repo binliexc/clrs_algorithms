@@ -1,7 +1,7 @@
 #![feature(once_cell_get_mut)]
 #![feature(box_as_ptr)]
 
-use disjoint_set::depth_determination::{Container, TreeNode};
+use disjoint_set::{depth_determination::{Container, TreeNode}, offline_lca::{offline_lca, TreeNode as LcaTreeNode}};
 
 mod basic_difference;
 mod binary_indexed_tree;
@@ -24,7 +24,9 @@ fn main() {
 
     // disjoint_set_test1();
 
-    depth_determination_test1();
+    // depth_determination_test1();
+    
+    offline_lca_test1();
 }
 
 pub fn depth_determination_test1() {
@@ -57,4 +59,28 @@ pub fn depth_determination_test1() {
     println!("node13.depth: {}", container.find_depth(13));
     println!("node1.depth: {}", container.find_depth(1));
     println!("node5.depth: {}", container.find_depth(5));
+}
+
+pub fn offline_lca_test1() {
+    // 建树, 其中结点0弃用, 以结点1为根节点
+    let mut treenodes = Vec::with_capacity(16);
+    for i in 0..16 {
+        treenodes.push(LcaTreeNode {
+            val: i,
+            children: Vec::new(),
+        });
+    }
+    let mut i = (treenodes.len() - 1) >> 1;
+    while i > 0 {
+        let l: *mut LcaTreeNode = &mut treenodes[i << 1];
+        let r: *mut LcaTreeNode = &mut treenodes[(i << 1) + 1];
+        let children = &mut treenodes[i].children;
+        children.push(l);
+        children.push(r);
+        i -= 1;
+    }    
+
+    let p = vec![(9, 11), (6, 8), (4, 7), (1, 15)];
+    let res = offline_lca(&treenodes[1], 15, p);
+    println!("res: {:?}", res);
 }
