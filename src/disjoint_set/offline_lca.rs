@@ -16,7 +16,6 @@ pub fn offline_lca(root: &TreeNode, range: usize, p: Vec<(usize, usize)>) -> Vec
         pairs[b].push(a);
     }
     
-
     lca(root, &mut marks, &pairs, &mut res, &mut disjoint_set);
     res
 }

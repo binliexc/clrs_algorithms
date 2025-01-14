@@ -1,5 +1,5 @@
 [package]
-name = "some_data_structures"
+name = "clrs_algorithms"
 version = "0.1.0"
 edition = "2021"
 
